@@ -40,6 +40,7 @@ type AccountKeeper interface {
 	SetAccount(ctx sdk.Context, account authtypes.AccountI)
 	RemoveAccount(ctx sdk.Context, account authtypes.AccountI)
 	GetParams(ctx sdk.Context) (params authtypes.Params)
+	GetNFTKeeper() authtypes.NftKeeper
 }
 
 // BankKeeper defines the expected interface needed to retrieve account balances.
@@ -49,6 +50,17 @@ type BankKeeper interface {
 	SendCoinsFromModuleToAccount(ctx sdk.Context, senderModule string, recipientAddr sdk.AccAddress, amt sdk.Coins) error
 	MintCoins(ctx sdk.Context, moduleName string, amt sdk.Coins) error
 	BurnCoins(ctx sdk.Context, moduleName string, amt sdk.Coins) error
+}
+
+// NftKeeper defines the expected NFT keeper interface
+type NftKeeper interface {
+	HasClass(ctx sdk.Context, classID string) bool
+	SaveClass(ctx sdk.Context, class sdk.Class) error
+	Mint(ctx sdk.Context, token sdk.NFT, receiver sdk.AccAddress) error
+	GetNFTsOfClassByOwner(ctx sdk.Context, classID string, owner sdk.AccAddress) (nfts []sdk.NFT)
+	GetNFT(ctx sdk.Context, classID, nftID string) (sdk.NFT, bool)
+	ParseData(token sdk.NFT, iface interface{}) (any, error)
+	Update(ctx sdk.Context, token sdk.NFT) error
 }
 
 // StakingKeeper returns the historical headers kept in store.

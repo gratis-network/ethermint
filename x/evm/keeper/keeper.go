@@ -55,6 +55,8 @@ type Keeper struct {
 	authority sdk.AccAddress
 	// access to account state
 	accountKeeper types.AccountKeeper
+	// property operations
+	nftKeeper types.NftKeeper
 	// update balance and accounting operations with coins
 	bankKeeper types.BankKeeper
 	// access historical headers for EVM state transition execution
