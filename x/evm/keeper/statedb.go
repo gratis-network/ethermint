@@ -17,6 +17,8 @@ package keeper
 
 import (
 	"fmt"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	"github.com/pkg/errors"
 	"math/big"
 
 	sdkmath "cosmossdk.io/math"
@@ -84,36 +86,50 @@ func (k *Keeper) ForEachStorage(ctx sdk.Context, addr common.Address, cb func(ke
 	}
 }
 
-// SetBalance update account's balance, compare with current balance first, then decide to mint or burn.
+// SetBalance update account's balance which is kept in the primary property.
 func (k *Keeper) SetBalance(ctx sdk.Context, addr common.Address, amount *big.Int) error {
-	cosmosAddr := sdk.AccAddress(addr.Bytes())
-
-	params := k.GetParams(ctx)
-	coin := k.bankKeeper.GetBalance(ctx, cosmosAddr, params.EvmDenom)
-	balance := coin.Amount.BigInt()
-	delta := new(big.Int).Sub(amount, balance)
-	switch delta.Sign() {
-	case 1:
-		// mint
-		coins := sdk.NewCoins(sdk.NewCoin(params.EvmDenom, sdkmath.NewIntFromBigInt(delta)))
-		if err := k.bankKeeper.MintCoins(ctx, types.ModuleName, coins); err != nil {
-			return err
-		}
-		if err := k.bankKeeper.SendCoinsFromModuleToAccount(ctx, types.ModuleName, cosmosAddr, coins); err != nil {
-			return err
-		}
-	case -1:
-		// burn
-		coins := sdk.NewCoins(sdk.NewCoin(params.EvmDenom, sdkmath.NewIntFromBigInt(new(big.Int).Neg(delta))))
-		if err := k.bankKeeper.SendCoinsFromAccountToModule(ctx, cosmosAddr, types.ModuleName, coins); err != nil {
-			return err
-		}
-		if err := k.bankKeeper.BurnCoins(ctx, types.ModuleName, coins); err != nil {
-			return err
-		}
-	default:
-		// not changed
+	if amount.Sign() < 0 {
+		return sdkerrors.ErrInvalidCoins
 	}
+	cosmosAddr := sdk.AccAddress(addr.Bytes())
+	params := k.GetParams(ctx)
+	// get balance from property
+	acc := k.accountKeeper.GetAccount(ctx, cosmosAddr)
+	property, err := k.accountKeeper.GetProperty(ctx, acc)
+	if errors.Is(err, sdkerrors.ErrNotFound) {
+		// mint a property
+		coins := sdk.NewCoins()
+		property := sdk.NewProperty(coins...)
+		nft, err := k.accountKeeper.MintProperty(ctx, acc, property)
+		if err != nil {
+			return err
+		}
+		// set property minted as primary
+		acc.SetPropertyID(nft.Id)
+		k.accountKeeper.SetAccount(ctx, acc)
+	} else if err != nil {
+		return err
+	}
+	balances := property.Balances
+	newCoin := sdk.NewCoin(params.EvmDenom, sdkmath.NewIntFromBigInt(amount))
+	if balances == nil {
+		balances = sdk.NewCoins(newCoin)
+	} else {
+		// update balance
+		found, coin := balances.Find(params.EvmDenom)
+		if found {
+			balances = balances.Sub(coin)
+		}
+		balances = balances.Add(newCoin)
+	}
+
+	property.Balances = balances
+	// save new property
+	err = k.accountKeeper.SetProperty(ctx, acc, property)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 

@@ -54,7 +54,7 @@ func (k *Keeper) NewEVM(
 ) evm.EVM {
 	blockCtx := vm.BlockContext{
 		CanTransfer: core.CanTransfer,
-		Transfer:    core.Transfer,
+		Transfer:    Transfer,
 		GetHash:     k.GetHashFn(ctx),
 		Coinbase:    cfg.CoinBase,
 		GasLimit:    ethermint.BlockGasLimit(ctx),
@@ -428,4 +428,9 @@ func (k *Keeper) ApplyMessageWithConfig(ctx sdk.Context,
 		Logs:    types.NewLogsFromEth(stateDB.Logs()),
 		Hash:    txConfig.TxHash.Hex(),
 	}, nil
+}
+
+// Transfer does nothing because the gas balance are not allowed to be transferred in gratis.
+func Transfer(db vm.StateDB, sender, recipient common.Address, amount *big.Int) {
+	// do nothing
 }

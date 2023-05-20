@@ -31,6 +31,7 @@ func (suite *KeeperTestSuite) TestQueryAccount() {
 		req        *types.QueryAccountRequest
 		expAccount *types.QueryAccountResponse
 	)
+	acc := suite.app.AccountKeeper.GetAccount(suite.ctx, suite.address.Bytes())
 
 	testCases := []struct {
 		msg      string
@@ -55,9 +56,8 @@ func (suite *KeeperTestSuite) TestQueryAccount() {
 			"success",
 			func() {
 				amt := sdk.Coins{ethermint.NewPhotonCoinInt64(100)}
-				err := suite.app.BankKeeper.MintCoins(suite.ctx, types.ModuleName, amt)
-				suite.Require().NoError(err)
-				err = suite.app.BankKeeper.SendCoinsFromModuleToAccount(suite.ctx, types.ModuleName, suite.address.Bytes(), amt)
+				// add balance to property
+				err := suite.app.AccountKeeper.AddBalanceToProperty(suite.ctx, acc, amt)
 				suite.Require().NoError(err)
 
 				expAccount = &types.QueryAccountResponse{
@@ -176,6 +176,7 @@ func (suite *KeeperTestSuite) TestQueryBalance() {
 		req        *types.QueryBalanceRequest
 		expBalance string
 	)
+	acc := suite.app.AccountKeeper.GetAccount(suite.ctx, suite.address.Bytes())
 
 	testCases := []struct {
 		msg      string
@@ -196,11 +197,9 @@ func (suite *KeeperTestSuite) TestQueryBalance() {
 			"success",
 			func() {
 				amt := sdk.Coins{ethermint.NewPhotonCoinInt64(100)}
-				err := suite.app.BankKeeper.MintCoins(suite.ctx, types.ModuleName, amt)
+				// add balance to the property
+				err := suite.app.AccountKeeper.AddBalanceToProperty(suite.ctx, acc, amt)
 				suite.Require().NoError(err)
-				err = suite.app.BankKeeper.SendCoinsFromModuleToAccount(suite.ctx, types.ModuleName, suite.address.Bytes(), amt)
-				suite.Require().NoError(err)
-
 				expBalance = "100"
 				req = &types.QueryBalanceRequest{
 					Address: suite.address.String(),

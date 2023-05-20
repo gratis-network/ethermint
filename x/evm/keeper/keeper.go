@@ -329,8 +329,19 @@ func (k *Keeper) GetBalance(ctx sdk.Context, addr common.Address) *big.Int {
 	if evmDenom == "" {
 		return big.NewInt(-1)
 	}
-	coin := k.bankKeeper.GetBalance(ctx, cosmosAddr, evmDenom)
-	return coin.Amount.BigInt()
+
+	// get balance from property
+	acc := k.accountKeeper.GetAccount(ctx, cosmosAddr)
+	property, err := k.accountKeeper.GetProperty(ctx, acc)
+	if err != nil {
+		return big.NewInt(0)
+	}
+	balances := property.Balances
+	if balances == nil {
+		return big.NewInt(0)
+	}
+
+	return balances.AmountOf(evmDenom).BigInt()
 }
 
 // GetBaseFee returns current base fee, return values:

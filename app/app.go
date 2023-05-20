@@ -425,6 +425,9 @@ func NewEthermintApp(
 		keys[nftkeeper.StoreKey], appCodec, app.AccountKeeper, app.BankKeeper,
 	)
 
+	// Set NFT keeper for account keeper
+	app.AccountKeeper.SetNFTKeeper(app.NftKeeper)
+
 	// Create Ethermint keepers
 	feeMarketSs := app.GetSubspace(feemarkettypes.ModuleName)
 	app.FeeMarketKeeper = feemarketkeeper.NewKeeper(

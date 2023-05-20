@@ -25,8 +25,6 @@ import (
 	sdkmath "cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	errortypes "github.com/cosmos/cosmos-sdk/types/errors"
-	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
-
 	"github.com/evmos/ethermint/x/evm/types"
 )
 
@@ -55,9 +53,9 @@ func (k *Keeper) RefundGas(ctx sdk.Context, msg core.Message, leftoverGas uint64
 		// positive amount refund
 		refundedCoins := sdk.Coins{sdk.NewCoin(denom, sdkmath.NewIntFromBigInt(remaining))}
 
-		// refund to sender from the fee collector module account, which is the escrow account in charge of collecting tx fees
-
-		err := k.bankKeeper.SendCoinsFromModuleToAccount(ctx, authtypes.FeeCollectorName, msg.From().Bytes(), refundedCoins)
+		// refund to sender's property
+		acc := k.accountKeeper.GetAccount(ctx, msg.From().Bytes())
+		err := k.accountKeeper.AddBalanceToProperty(ctx, acc, refundedCoins)
 		if err != nil {
 			err = errorsmod.Wrapf(errortypes.ErrInsufficientFunds, "fee collector account failed to refund fees: %s", err.Error())
 			return errorsmod.Wrapf(err, "failed to refund %d leftover gas (%s)", leftoverGas, refundedCoins.String())

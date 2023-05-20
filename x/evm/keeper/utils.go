@@ -68,8 +68,8 @@ func (k *Keeper) DeductTxCostsFromUserBalance(
 		return errorsmod.Wrapf(err, "account not found for sender %s", from)
 	}
 
-	// deduct the full gas cost from the user balance
-	if err := authante.DeductFees(k.nftKeeper, ctx, signerAcc, fees); err != nil {
+	// deduct the full gas cost from the property balance
+	if err := authante.DeductFees(k.accountKeeper.GetNFTKeeper(), ctx, signerAcc, fees); err != nil {
 		return errorsmod.Wrapf(err, "failed to deduct full gas cost %s from the user %s balance", fees, from)
 	}
 

@@ -41,6 +41,10 @@ type AccountKeeper interface {
 	RemoveAccount(ctx sdk.Context, account authtypes.AccountI)
 	GetParams(ctx sdk.Context) (params authtypes.Params)
 	GetNFTKeeper() authtypes.NftKeeper
+	GetProperty(sdk.Context, authtypes.AccountI) (sdk.Property, error)
+	SetProperty(sdk.Context, authtypes.AccountI, sdk.Property) error
+	MintProperty(sdk.Context, authtypes.AccountI, sdk.Property) (sdk.NFT, error)
+	AddBalanceToProperty(sdk.Context, authtypes.AccountI, sdk.Coins) error
 }
 
 // BankKeeper defines the expected interface needed to retrieve account balances.

@@ -68,7 +68,7 @@ func DoBenchmark(b *testing.B, txBuilder TxBuilder) {
 		require.NoError(b, err)
 
 		fees := sdk.Coins{sdk.NewCoin(suite.EvmDenom(), sdkmath.NewIntFromBigInt(txData.Fee()))}
-		err = authante.DeductFees(suite.app.NftKeeper, suite.ctx, suite.app.AccountKeeper.GetAccount(ctx, msg.GetFrom()), fees)
+		err = authante.DeductFees(suite.app.AccountKeeper.GetNFTKeeper(), suite.ctx, suite.app.AccountKeeper.GetAccount(ctx, msg.GetFrom()), fees)
 		require.NoError(b, err)
 
 		rsp, err := suite.app.EvmKeeper.EthereumTx(sdk.WrapSDKContext(ctx), msg)
@@ -135,7 +135,7 @@ func BenchmarkMessageCall(b *testing.B) {
 		require.NoError(b, err)
 
 		fees := sdk.Coins{sdk.NewCoin(suite.EvmDenom(), sdkmath.NewIntFromBigInt(txData.Fee()))}
-		err = authante.DeductFees(suite.app.NftKeeper, suite.ctx, suite.app.AccountKeeper.GetAccount(ctx, msg.GetFrom()), fees)
+		err = authante.DeductFees(suite.app.AccountKeeper.GetNFTKeeper(), suite.ctx, suite.app.AccountKeeper.GetAccount(ctx, msg.GetFrom()), fees)
 		require.NoError(b, err)
 
 		rsp, err := suite.app.EvmKeeper.EthereumTx(sdk.WrapSDKContext(ctx), msg)
