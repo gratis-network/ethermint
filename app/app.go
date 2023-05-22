@@ -348,6 +348,13 @@ func NewEthermintApp(
 		maccPerms,
 		sdk.GetConfig().GetBech32AccountAddrPrefix(),
 	)
+	// Create NFT keeper before any keeper which uses account keeper
+	app.NftKeeper = nftkeeper.NewKeeper(
+		keys[nftkeeper.StoreKey], appCodec, app.AccountKeeper, app.BankKeeper,
+	)
+	// Set NFT keeper for account keeper
+	app.AccountKeeper.SetNFTKeeper(app.NftKeeper)
+
 	app.BankKeeper = bankkeeper.NewBaseKeeper(
 		appCodec,
 		keys[banktypes.StoreKey],
@@ -419,14 +426,6 @@ func NewEthermintApp(
 		app.AccountKeeper)
 
 	tracer := cast.ToString(appOpts.Get(srvflags.EVMTracer))
-
-	// Create NFT Keeper
-	app.NftKeeper = nftkeeper.NewKeeper(
-		keys[nftkeeper.StoreKey], appCodec, app.AccountKeeper, app.BankKeeper,
-	)
-
-	// Set NFT keeper for account keeper
-	app.AccountKeeper.SetNFTKeeper(app.NftKeeper)
 
 	// Create Ethermint keepers
 	feeMarketSs := app.GetSubspace(feemarkettypes.ModuleName)
