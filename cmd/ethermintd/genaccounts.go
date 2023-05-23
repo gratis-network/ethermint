@@ -19,6 +19,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/cosmos/cosmos-sdk/x/nft"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/spf13/cobra"
@@ -32,7 +33,6 @@ import (
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	"github.com/cosmos/cosmos-sdk/x/genutil"
 	genutiltypes "github.com/cosmos/cosmos-sdk/x/genutil/types"
-
 	"github.com/evmos/ethermint/crypto/hd"
 	ethermint "github.com/evmos/ethermint/types"
 	evmtypes "github.com/evmos/ethermint/x/evm/types"
@@ -145,6 +145,7 @@ contain valid denominations. Accounts may optionally be supplied with vesting pa
 				return fmt.Errorf("failed to unmarshal genesis state: %w", err)
 			}
 
+			// prepare auth genesis
 			authGenState := authtypes.GetGenesisStateFromAppState(clientCtx.Codec, appState)
 
 			accs, err := authtypes.UnpackAccounts(authGenState.Accounts)
@@ -155,6 +156,11 @@ contain valid denominations. Accounts may optionally be supplied with vesting pa
 			if accs.Contains(addr) {
 				return fmt.Errorf("cannot add account at existing address %s", addr)
 			}
+
+			// generate property id
+			propId := fmt.Sprintf("g%x%d", genAccount.GetAddress().Bytes()[:5], genAccount.GetSequence())
+			// set property id for genesis account
+			genAccount.SetPropertyID(propId)
 
 			// Add the new account to the set of genesis accounts and sanitize the
 			// accounts afterwards.
@@ -172,7 +178,29 @@ contain valid denominations. Accounts may optionally be supplied with vesting pa
 				return fmt.Errorf("failed to marshal auth genesis state: %w", err)
 			}
 
+			// prepare nft genesis
+			nftGenState := nft.GetGenesisStateFromAppState(clientCtx.Codec, appState)
+
+			// create a new property for the new account
+			prop := sdk.NewProperty(balances.Coins...)
+			data, err := prop.ToAny()
+
+			propNFT := sdk.NFT{
+				ClassId: authtypes.PropertyNftClassID,
+				Id:      propId,
+				Uri:     "",
+				UriHash: "",
+				Data:    data,
+			}
+			entry := nft.Entry{
+				Owner: genAccount.GetAddress().String(),
+				Nfts:  []*sdk.NFT{&propNFT},
+			}
+			nftGenState.Entries = append(nftGenState.Entries, &entry)
+			nftGenStateBz, err := clientCtx.Codec.MarshalJSON(nftGenState)
+
 			appState[authtypes.ModuleName] = authGenStateBz
+			appState[nft.ModuleName] = nftGenStateBz
 
 			bankGenState := banktypes.GetGenesisStateFromAppState(clientCtx.Codec, appState)
 			bankGenState.Balances = append(bankGenState.Balances, balances)
