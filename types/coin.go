@@ -33,6 +33,8 @@ const (
 	// - EVM parameters: denomination used for running EVM state transitions in Ethermint.
 	AttoPhoton string = "aphoton"
 
+	GasDenom string = "gas"
+
 	// BaseDenomUnit defines the base denomination unit for Photons.
 	// 1 photon = 1x10^{BaseDenomUnit} aphoton
 	BaseDenomUnit = 18
